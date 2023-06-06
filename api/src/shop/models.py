@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, func, Text, Numeric, F
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, configure_mappers
 
-from membership.models import Member
+from membership.models import Member, Group
 
 Base = declarative_base()
 
@@ -161,6 +161,24 @@ class StripePending(Base):
 
     def __repr__(self):
         return f'StripePending(id={self.id}, stripe_token={self.stripe_token})'
+
+
+class Discount(Base):
+    __tablename__ = 'discounts'
+
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    group_id = Column(Integer, ForeignKey(Group.group_id), nullable=False)
+    product_id = Column(Integer, ForeignKey(Product.id), nullable=False)
+    price = Column(Numeric(precision="15,3"), nullable=False)
+    name = Column(String(255), nullable=False)
+    description = Column(Text)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now())
+    deleted_at = Column(DateTime)
+
+    def __repr__(self):
+        return f'Discount(id={self.id}, name={self.name}, product={self.product_id}, amount={self.price})'
+
 
 
 # https://stackoverflow.com/questions/67149505/how-do-i-make-sqlalchemy-backref-work-without-creating-an-orm-object

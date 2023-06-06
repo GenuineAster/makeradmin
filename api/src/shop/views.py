@@ -8,8 +8,9 @@ from service.entity import OrmSingeRelation, OrmSingleSingleRelation
 from service.error import PreconditionFailed
 from shop import service
 from shop.entities import product_image_entity, transaction_content_entity, transaction_entity, \
-    transaction_action_entity, product_entity, category_entity, product_action_entity
-from shop.models import TransactionContent, ProductImage
+    transaction_action_entity, product_entity, category_entity, product_action_entity, discount_entity
+from shop.models import TransactionContent, ProductImage, Discount
+from membership.models import Member, Group
 from shop.pay import pay, register
 from shop.shop_data import pending_actions, member_history, receipt, get_product_data, all_product_data, \
     get_membership_products
@@ -31,6 +32,16 @@ service.entity_routes(
 service.entity_routes(
     path="/product",
     entity=product_entity,
+    permission_list=WEBSHOP,
+    permission_read=WEBSHOP,
+    permission_create=WEBSHOP_EDIT,
+    permission_update=WEBSHOP_EDIT,
+    permission_delete=WEBSHOP_EDIT,
+)
+
+service.entity_routes(
+    path="/discount",
+    entity=discount_entity,
     permission_list=WEBSHOP,
     permission_read=WEBSHOP,
     permission_create=WEBSHOP_EDIT,
@@ -201,3 +212,12 @@ def process_stripe_events_route(start=Arg(str, required=False), source_id=Arg(st
     """ Used to make server fetch stripe events, used for testing since webhook is hard to use. """
     return process_stripe_events(start, source_id, type)
 
+@service.route("/member/current/applicable_discounts", method=GET, permission=USER)
+def get_my_applicable_discounts():
+    db_session.query(Member).filter_by(member_id=g.user_id)
+    db_session.query(Discount).join(ProductImage.id == image_id, ProductImage.deleted_at.is_(None)).one()
+
+    response = make_response(image.data)
+    response.headers.set("Content-Type", image.type)
+    response.headers.set("Max-Age", "36000")
+    return response
